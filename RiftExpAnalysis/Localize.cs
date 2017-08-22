@@ -38,6 +38,7 @@ namespace TinyZ.RiftExpAnalysis
         public static string RunningTime = "Running Time";
         public static string TotalExp = "Total Exp";
         public static string EveryHourExp = "Every Hour Exp";
+        public static string LevelUpWith = "Level Up With {0}.";
 
         /// <summary>
         /// 初始化语言文件

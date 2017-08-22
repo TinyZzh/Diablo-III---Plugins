@@ -9,31 +9,31 @@ namespace TinyZ.RiftExpAnalysis
 
         internal static void Error(string message, params object[] args)
         {
-            message = "[" + RiftExpAnalysisPugin.NAME + " V" + RiftExpAnalysisPugin.VERSION + "]" + message;
+            message = "[" + Localize.PluginName + " V" + Localize.PluginVersison + "]" + message;
             DbLog.ErrorFormat(message, args);
         }
 
         internal static void Info(string message, params object[] args)
         {
-            message = "[" + RiftExpAnalysisPugin.NAME + " V" + RiftExpAnalysisPugin.VERSION + "]" + message;
+            message = "[" + Localize.PluginName + " V" + Localize.PluginVersison + "]" + message;
             DbLog.InfoFormat(message, args);
         }
 
         internal static void Debug(string message, params object[] args)
         {
-            message = "[" + RiftExpAnalysisPugin.NAME + " V" + RiftExpAnalysisPugin.VERSION + "]" + message;
+            message = "[" + Localize.PluginName + " V" + Localize.PluginVersison + "]" + message;
             DbLog.DebugFormat(message, args);
         }
 
         internal static void Verbase(string message)
         {
-            message = "[" + RiftExpAnalysisPugin.NAME + " V" + RiftExpAnalysisPugin.VERSION + "]" + message;
+            message = "[" + Localize.PluginName + " V" + Localize.PluginVersison + "]" + message;
             DbLog.Verbose(message);
         }
 
         internal static void Warn(string message)
         {
-            message = "[" + RiftExpAnalysisPugin.NAME + " V" + RiftExpAnalysisPugin.VERSION + "]" + message;
+            message = "[" + Localize.PluginName + " V" + Localize.PluginVersison + "]" + message;
             DbLog.WarnFormat(message);
         }
 

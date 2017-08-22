@@ -41,12 +41,17 @@ namespace TinyZ.RiftExpAnalysis
         /// <summary>
         ///     当前巅峰等级
         /// </summary>
-        public static int CurrentParagonLevel;
+        public static int LastParagonLevel;
 
         /// <summary>
         ///     当前巅峰经验值
         /// </summary>
-        public static long CurrentParagonExp;
+        public static long LastParagonExp;
+
+        /// <summary>
+        ///     巅峰等级下一级全部经验
+        /// </summary>
+        public static long LastParagonNextLevel;
 
         /// <summary>
         ///     当前密境类型
@@ -67,12 +72,12 @@ namespace TinyZ.RiftExpAnalysis
         /// <summary>
         ///     服务是否运行
         /// </summary>
-        private volatile bool _isServiceRunning;
+        public static volatile bool IsServiceRunning;
 
         /// <summary>
         ///     最后一次刷新面板时间
         /// </summary>
-        private long _lastRefreshTime;
+        public static long LastRefreshTime;
 
 
         public string Author => Localize.PluginAuthor;
@@ -96,7 +101,7 @@ namespace TinyZ.RiftExpAnalysis
         /// </summary>
         public void OnInitialize()
         {
-            Logger.System(Localize.LogSystemLoaded);
+            Logger.System(Localize.LogInitialized);
         }
 
         /// <summary>
@@ -104,7 +109,7 @@ namespace TinyZ.RiftExpAnalysis
         /// </summary>
         public void OnEnabled()
         {
-            if (_isServiceRunning)
+            if (IsServiceRunning)
                 return;
             GameEvents.OnGameJoined += OnGameJoined;
             GameEvents.OnGameLeft += OnGameLeft;
@@ -113,16 +118,21 @@ namespace TinyZ.RiftExpAnalysis
             BotMain.OnStop += OnStop;
             TabUI.InitTab();
             //
-            _isServiceRunning = true;
+            IsServiceRunning = true;
+
+            OnRiftStarted += RiftExpAnalysisPugin_OnRiftStarted;
+            OnRiftCompleted += RiftExpAnalysisPugin_OnRiftCompleted;
+            GameEvents.OnPlayerDied += GameEvents_OnPlayerDied;
+
             Logger.Info("[OnEnabled]");
         }
-
+        
         /// <summary>
         ///     禁用插件
         /// </summary>
         public void OnDisabled()
         {
-            if (!_isServiceRunning)
+            if (!IsServiceRunning)
                 return;
             GameEvents.OnGameJoined -= OnGameJoined;
             GameEvents.OnGameLeft -= OnGameLeft;
@@ -132,7 +142,11 @@ namespace TinyZ.RiftExpAnalysis
             BotMain.OnStop -= OnStop;
             TabUI.destroyUI();
             //  
-            _isServiceRunning = false;
+            IsServiceRunning = false;
+
+            OnRiftStarted -= RiftExpAnalysisPugin_OnRiftStarted;
+            OnRiftCompleted -= RiftExpAnalysisPugin_OnRiftCompleted;
+
             Logger.Info("[OnDisabled]");
         }
 
@@ -142,6 +156,22 @@ namespace TinyZ.RiftExpAnalysis
         public void OnPulse()
         {
             AnalysisExpChange();
+            //  密境 - 开启
+            var isStart = ZetaDia.Storage.RiftStarted;
+            if (isStart && !_riftStatus)
+            {
+                _riftStatus = isStart;
+                if (OnRiftStarted != null)
+                    OnRiftStarted(this, null);
+            }
+            //  密境 - 结束
+            var isEnd = ZetaDia.Storage.RiftCompleted;
+            if (isEnd && _riftStatus)
+            {
+                _riftStatus = isEnd;
+                if (OnRiftCompleted != null)
+                    OnRiftCompleted(this, null);
+            }
         }
 
         /// <summary>
@@ -149,9 +179,41 @@ namespace TinyZ.RiftExpAnalysis
         /// </summary>
         public void OnShutdown()
         {
-            _isServiceRunning = false;
+            IsServiceRunning = false;
             Logger.Info("[OnShutdown]");
         }
+
+        #region 事件
+
+        private void RiftExpAnalysisPugin_OnRiftStarted(object sender, EventArgs e)
+        {
+            Current = new RiftBattleReport
+            {
+                StartTime = DateTime.Now,
+                RiftType = ZetaDia.Storage.CurrentRiftType
+            };
+            //
+            LastParagonLevel = ZetaDia.Me.ParagonLevel;
+            LastParagonExp = ZetaDia.Me.ParagonCurrentExperience;
+            LastParagonNextLevel = ZetaDia.Me.ParagonExperienceNextLevel;
+        }
+
+        private void RiftExpAnalysisPugin_OnRiftCompleted(object sender, EventArgs e)
+        {
+            var queue = BattleReports[Current.RiftType] ?? new ConcurrentQueue<RiftBattleReport>();
+            queue.Enqueue(Current);
+            Current = null;
+        }
+
+        private void GameEvents_OnPlayerDied(object sender, EventArgs e)
+        {
+            if (Current != null)
+            {
+                Current.TotalDeath++;
+            }
+        }
+
+        #endregion
 
         /// <summary>
         ///     获取完成的战斗
@@ -195,7 +257,7 @@ namespace TinyZ.RiftExpAnalysis
         }
 
         /// <summary>
-        /// 是否密境已经开启
+        ///     是否密境已经开启
         /// </summary>
         /// <returns></returns>
         public static bool IsRiftStarted()
@@ -204,7 +266,7 @@ namespace TinyZ.RiftExpAnalysis
         }
 
         /// <summary>
-        /// 是否密境已经完成
+        ///     是否密境已经完成
         /// </summary>
         /// <returns></returns>
         public bool IsRiftCompleted()
@@ -217,17 +279,54 @@ namespace TinyZ.RiftExpAnalysis
         /// </summary>
         private void AnalysisExpChange()
         {
-            if (!_isServiceRunning)
+            if (!IsServiceRunning)
                 return;
             var now = DateTime.Now.Ticks;
-            var ts = new TimeSpan(Math.Max(0, now - _lastRefreshTime));
+            var ts = new TimeSpan(Math.Max(0, now - LastRefreshTime));
             if (ts.TotalMilliseconds < UpdateInterval)
                 return;
-            _lastRefreshTime = now;
+            LastRefreshTime = now;
             try
             {
                 if (ZetaDia.Me == null || !ZetaDia.Me.IsValid || !ZetaDia.IsInGame || ZetaDia.Globals.IsLoadingWorld)
                     return;
+                //  未满级
+                var curExp = ZetaDia.Me.ParagonCurrentExperience;
+                var curExpNextLv = ZetaDia.Me.ParagonExperienceNextLevel;
+                var curLv = ZetaDia.Me.ParagonLevel;
+                if (curExp <= 0 && curExpNextLv <= 0 && curLv <= 0)
+                    return;
+                //  等级未变更,经验值变更
+                if (curLv == LastParagonLevel && curExp > LastParagonExp)
+                {
+                    Current.TotalExp += curExp - LastParagonExp;
+                }
+                else if (curLv > LastParagonLevel)  
+                {
+                    if (curLv - LastParagonLevel == 1) //  等级提升一级
+                    {
+                        Current.TotalExp += (LastParagonNextLevel - LastParagonExp) + curExp;
+                        Current.LevelUp += 1;
+                    }
+                    else
+                    {
+                        //  TODO: 升级过多 - 只记录等级变更
+                        Current.LevelUp += curLv - LastParagonLevel;
+                        Core.Logger.Warn(string.Format(Localize.LevelUpWith, (curLv - LastParagonLevel)));
+                    }
+                }
+                LastParagonExp = curExp;
+                LastParagonLevel = curLv;
+                LastParagonNextLevel = curExpNextLv;
+                
+
+
+
+
+
+
+
+
                 var paragonCurrentExperience = ZetaDia.Me.ParagonCurrentExperience;
                 var paragonExperienceNextLevel = ZetaDia.Me.ParagonExperienceNextLevel;
                 long paragonLevel = ZetaDia.Me.ParagonLevel;
@@ -423,6 +522,11 @@ namespace TinyZ.RiftExpAnalysis
             public int LevelUp;
 
             /// <summary>
+            ///     密境类型
+            /// </summary>
+            public RiftType RiftType;
+
+            /// <summary>
             ///     密境开启时间
             /// </summary>
             public DateTime StartTime;
@@ -433,9 +537,9 @@ namespace TinyZ.RiftExpAnalysis
             public long TotalExp;
 
             /// <summary>
-            ///     密境类型
+            ///     玩家死亡次数
             /// </summary>
-            public RiftType Type;
+            public long TotalDeath;
         }
 
 
@@ -490,6 +594,22 @@ namespace TinyZ.RiftExpAnalysis
                        " StartEXP=" + Convert.ToString(StartExp) + " EndEXP=" + Convert.ToString(EndExp) + "]";
             }
         }
+
+        #region 事件
+
+        private static bool _riftStatus;
+
+        /// <summary>
+        ///     密境开启事件
+        /// </summary>
+        public static event EventHandler<EventArgs> OnRiftStarted;
+
+        /// <summary>
+        ///     密境结束事件
+        /// </summary>
+        public static event EventHandler<EventArgs> OnRiftCompleted;
+
+        #endregion
 
         #region 密境消耗时间
 
