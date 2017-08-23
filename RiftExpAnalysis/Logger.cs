@@ -7,31 +7,31 @@ namespace TinyZ.RiftExpAnalysis
     {
         private static readonly ILog DbLog = Zeta.Common.Logger.GetLoggerInstanceForType();
 
-        internal static void Error(string message, params object[] args)
+        public static void Error(string message, params object[] args)
         {
             message = "[" + Localize.PluginName + " V" + Localize.PluginVersison + "]" + message;
             DbLog.ErrorFormat(message, args);
         }
 
-        internal static void Info(string message, params object[] args)
+        public static void Info(string message, params object[] args)
         {
             message = "[" + Localize.PluginName + " V" + Localize.PluginVersison + "]" + message;
             DbLog.InfoFormat(message, args);
         }
 
-        internal static void Debug(string message, params object[] args)
+        public static void Debug(string message, params object[] args)
         {
             message = "[" + Localize.PluginName + " V" + Localize.PluginVersison + "]" + message;
             DbLog.DebugFormat(message, args);
         }
 
-        internal static void Verbase(string message)
+        public static void Verbase(string message)
         {
             message = "[" + Localize.PluginName + " V" + Localize.PluginVersison + "]" + message;
             DbLog.Verbose(message);
         }
 
-        internal static void Warn(string message)
+        public static void Warn(string message)
         {
             message = "[" + Localize.PluginName + " V" + Localize.PluginVersison + "]" + message;
             DbLog.WarnFormat(message);

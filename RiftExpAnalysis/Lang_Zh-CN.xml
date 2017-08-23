@@ -5,6 +5,7 @@
   <Content id="Avg">平均</Content>
   <Content id="Max">最大</Content>
   <Content id="Min">最小</Content>
+  <Content id="Total">累计</Content>
   <Content id="CostTime">通关耗时</Content>
   <Content id="Exp">经验值</Content>
   <Content id="CreateGame">创建游戏</Content>
