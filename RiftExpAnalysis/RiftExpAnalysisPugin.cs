@@ -47,6 +47,11 @@ namespace TinyZ.RiftExpAnalysis
         public static DateTime BootstarpDateTime;
 
         /// <summary>
+        /// 启动时等级
+        /// </summary>
+        public static int BootstarpLevel;
+
+        /// <summary>
         ///     密境战报
         /// </summary>
         public static ConcurrentDictionary<RiftType, ConcurrentQueue<RiftBattleReport>> BattleReports =
@@ -101,6 +106,7 @@ namespace TinyZ.RiftExpAnalysis
             Localize.Initialize();
             IsServiceRunning = true;
             BootstarpDateTime = DateTime.Now;
+            BootstarpLevel = ZetaDia.Me.ParagonLevel;
 
             OnRiftStarted += RiftExpAnalysisPugin_OnRiftStarted;
             OnRiftCompleted += RiftExpAnalysisPugin_OnRiftCompleted;
@@ -240,6 +246,7 @@ namespace TinyZ.RiftExpAnalysis
                 LastParagonLevel = curLv;
                 LastParagonNextLevel = curExpNextLv;
                 //  
+                TabUI.UpdateBaseInfo();
                 TabUI.UpdateRiftAnalysisInfo(RiftType.Greater);
                 TabUI.UpdateRiftAnalysisInfo(RiftType.Nephalem);
             }

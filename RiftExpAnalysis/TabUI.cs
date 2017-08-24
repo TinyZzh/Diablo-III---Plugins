@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -42,11 +41,11 @@ namespace TinyZ.RiftExpAnalysis
                         Localize.GreaterRift + Localize.Death,
                         Localize.GreaterRift + Localize.Count,
                         Localize.GreaterRift + Localize.CostTime,
-                        Localize.GreaterRift + Localize.Exp,
+                        Localize.GreaterRift + Localize.Exp
                     };
                     foreach (var t in left)
                     {
-                        var textBlock = CreateLabel(t, HorizontalAlignment.Stretch);
+                        var textBlock = CreateLabel(t + ":", HorizontalAlignment.Stretch);
                         _labels.Add(t, textBlock);
                         leftPanel.Children.Add(textBlock);
                     }
@@ -61,7 +60,7 @@ namespace TinyZ.RiftExpAnalysis
                     };
                     var right = new[]
                     {
-                        Localize.Death,
+                        Localize.Death + Localize.Count,
                         Localize.LevelUp,
                         Localize.CreateGame,
                         //  
@@ -72,7 +71,7 @@ namespace TinyZ.RiftExpAnalysis
                     };
                     foreach (var t in right)
                     {
-                        var textBlock = CreateLabel(t, HorizontalAlignment.Stretch);
+                        var textBlock = CreateLabel(t + ":", HorizontalAlignment.Stretch);
                         _labels.Add(t, textBlock);
                         rightPanel.Children.Add(textBlock);
                     }
@@ -133,7 +132,31 @@ namespace TinyZ.RiftExpAnalysis
         }
 
         /// <summary>
-        /// 更新密境统计信息
+        ///     显示当前密境信息
+        /// </summary>
+        internal static void UpdateBaseInfo()
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (RiftExpAnalysisPugin.Current != null)
+                {
+                    var timeSpan = DateTime.Now - RiftExpAnalysisPugin.BootstarpDateTime;
+                    //  总游戏时间
+                    _labels[Localize.RunningTime].Text = string.Format("{0} {1:D2}:{2:D2}:{3:D2}", Localize.RunningTime,
+                        timeSpan.Hours, timeSpan.Minutes, timeSpan.Seconds);
+                    //  总死亡次数
+                    _labels[Localize.Death + Localize.Count].Text = string.Format("{0} {1} : {2}", Localize.Death,
+                        Localize.Count,
+                        RiftExpAnalysisPugin.Current.DeathCount);
+                    //  总升级等级数
+                    _labels[Localize.LevelUp].Text = string.Format("{0} : {1}", Localize.LevelUp,
+                        RiftExpAnalysisPugin.LastParagonLevel - RiftExpAnalysisPugin.BootstarpLevel);
+                }
+            });
+        }
+
+        /// <summary>
+        ///     更新密境统计信息
         /// </summary>
         /// <param name="riftType">密境类型</param>
         internal static void UpdateRiftAnalysisInfo(RiftType riftType)
@@ -159,36 +182,29 @@ namespace TinyZ.RiftExpAnalysis
                         return;
                     }
                     if (field == Localize.Death)
-                    {
                         _labels[rift + field].Text = string.Format(rift + field + detail,
                             RiftExpAnalysisPugin.GetTotalDeath(battleReports, RiftType.Greater),
                             RiftExpAnalysisPugin.GetMaxDeath(battleReports, RiftType.Greater),
                             RiftExpAnalysisPugin.GetMinDeath(battleReports, RiftType.Greater),
                             RiftExpAnalysisPugin.GetAvgDeath(battleReports, RiftType.Greater)
                         );
-                    }
                     else if (Localize.Count == field)
-                    {
-                        _labels[rift + field].Text = string.Format(rift + field + "{0}", battleReports.ToArray().Length);
-                    }
+                        _labels[rift + field].Text =
+                            string.Format(rift + field + ":{0}", battleReports.ToArray().Length);
                     else if (Localize.CostTime == field)
-                    {
                         _labels[rift + field].Text = string.Format(rift + field + detail,
                             RiftExpAnalysisPugin.GetTotalCostTime(battleReports, RiftType.Greater),
                             RiftExpAnalysisPugin.GetMaxCostTime(battleReports, RiftType.Greater),
                             RiftExpAnalysisPugin.GetMinCostTime(battleReports, RiftType.Greater),
                             RiftExpAnalysisPugin.GetAvgCostTime(battleReports, RiftType.Greater)
                         );
-                    }
                     else if (Localize.Exp == field)
-                    {
                         _labels[rift + field].Text = string.Format(rift + field + detail,
                             RiftExpAnalysisPugin.GetTotalExp(battleReports, RiftType.Greater),
                             RiftExpAnalysisPugin.GetMaxExp(battleReports, RiftType.Greater),
                             RiftExpAnalysisPugin.GetMinExp(battleReports, RiftType.Greater),
                             RiftExpAnalysisPugin.GetAvgExp(battleReports, RiftType.Greater)
                         );
-                    }
                 }
             });
         }
@@ -226,7 +242,7 @@ namespace TinyZ.RiftExpAnalysis
                 };
 
                 var ws = new Dictionary<string, string>();
-                
+
 
                 //
                 //
