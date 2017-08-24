@@ -128,6 +128,7 @@ namespace TinyZ.RiftExpAnalysis
                 if (tabs == null)
                     return;
                 tabs.Items.Remove(_tabItem);
+                _labels.Clear();
             });
         }
 

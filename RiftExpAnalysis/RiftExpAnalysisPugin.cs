@@ -184,7 +184,7 @@ namespace TinyZ.RiftExpAnalysis
                 return null;
             return BattleReports[riftType].Where(bp => bp.EndTime > bp.StartTime && bp.Exp > 0);
         }
-
+        
         /// <summary>
         ///     是否密境已经开启
         /// </summary>
@@ -252,7 +252,7 @@ namespace TinyZ.RiftExpAnalysis
             }
             catch (Exception e)
             {
-                Logger.Error(e.Message);
+                Logger.Error("[AnalysisExpChange] {0}", e);
             }
         }
 

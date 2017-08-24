@@ -13,6 +13,9 @@ namespace TinyZ.RiftExpAnalysis
     /// </summary>
     public class Localize
     {
+
+        public static readonly Localize Instance = new Localize();
+
         /// <summary>
         ///     初始化语言文件
         /// </summary>
@@ -26,22 +29,17 @@ namespace TinyZ.RiftExpAnalysis
             if (!File.Exists(file))
                 return;
             var document = XDocument.Load(file);
-            Logger.Warn(document.Root.Value);
             foreach (var xElement in document.Root.Elements())
-            {
+            { 
                 try
                 {
-                    Logger.Debug("HasAttributes : ", xElement.HasAttributes);
-                    Logger.Debug("Id : ", xElement.Attribute("id"));
                     if (xElement.HasAttributes && xElement.Attribute("id") != null)
                     {
                         var property = xElement.Attribute("id").Value;
-                        var fieldInfo = typeof(Localize).GetField(property, BindingFlags.Static);
-                        Logger.Debug("fieldInfo", fieldInfo);
+                        var fieldInfo = typeof(Localize).GetProperty(property, BindingFlags.Static | BindingFlags.Public);
                         if (fieldInfo != null)
                         {
-                            fieldInfo.SetValue(typeof(Localize), xElement.Value);
-                            Logger.Debug("fieldInfo", fieldInfo.GetValue(typeof(Localize)));
+                            fieldInfo.SetValue(Localize.Instance, xElement.Value);
                         }
                     }
                 }
